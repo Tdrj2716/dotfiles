@@ -1,0 +1,24 @@
+# local secrets (not tracked by git)
+[ -f ~/.zshrc.local ] && source ~/.zshrc.local
+
+# zsh-completions
+FPATH="$(brew --prefix)/share/zsh-completions:$FPATH"
+autoload -Uz compinit
+if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then
+  compinit
+else
+  compinit -C  # use cache 
+fi
+
+# fzf
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+# zoxide
+eval "$(zoxide init zsh)"
+
+# starship
+eval "$(starship init zsh)"
+
+# zsh-syntax-highlighting (write at the end)
+source ~/.config/zsh-syntax-highlighting/catppuccin_mocha-zsh-syntax-highlighting.zsh
+source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh

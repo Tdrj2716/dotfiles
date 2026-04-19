@@ -1,0 +1,18 @@
+# Homebrew
+eval "$(/opt/homebrew/bin/brew shellenv)"
+
+# Volta
+export VOLTA_HOME="$HOME/.volta"
+export PATH="$VOLTA_HOME/bin:$PATH"
+
+# Poetry / uv
+export PATH="$HOME/.local/bin:$PATH"
+
+# Flutter
+export PATH="$HOME/flutter/bin:$PATH"
+
+# Haskell (ghcup)
+[ -f "$HOME/.ghcup/env" ] && . "$HOME/.ghcup/env"
+
+# Rust (cargo)
+. "$HOME/.cargo/env"
