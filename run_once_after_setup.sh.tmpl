@@ -1,0 +1,88 @@
+#!/bin/bash
+set -euo pipefail
+
+# ──────────────────────────────────────────────────────────
+# 1. Homebrew + Brewfile
+# ──────────────────────────────────────────────────────────
+if ! command -v brew &>/dev/null; then
+  echo ">>> Installing Homebrew..."
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
+
+eval "$(/opt/homebrew/bin/brew shellenv)"
+
+echo ">>> Running brew bundle..."
+brew bundle --file="$HOME/.Brewfile" --no-lock
+
+# ──────────────────────────────────────────────────────────
+# 2. Volta (Node.js)
+# ──────────────────────────────────────────────────────────
+export VOLTA_HOME="$HOME/.volta"
+export PATH="$VOLTA_HOME/bin:$PATH"
+
+if [ ! -d "$VOLTA_HOME" ]; then
+  echo ">>> Installing Volta..."
+  curl https://get.volta.sh | bash
+fi
+
+volta install node
+
+# ──────────────────────────────────────────────────────────
+# 3. Rust (rustup toolchain)
+# ──────────────────────────────────────────────────────────
+# rustup バイナリは Brewfile でインストール済み
+if ! command -v rustc &>/dev/null; then
+  echo ">>> Initializing Rust stable toolchain..."
+  rustup toolchain install stable
+  rustup default stable
+fi
+
+# ──────────────────────────────────────────────────────────
+# 4. Haskell / ghcup  [optional: chezmoi.toml の installGhcup]
+# ──────────────────────────────────────────────────────────
+{{ if .installGhcup -}}
+if [ ! -f "$HOME/.ghcup/env" ]; then
+  echo ">>> Installing ghcup..."
+  curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org \
+    | BOOTSTRAP_HASKELL_NONINTERACTIVE=1 \
+      BOOTSTRAP_HASKELL_GHC_VERSION=recommended \
+      BOOTSTRAP_HASKELL_CABAL_VERSION=recommended \
+      BOOTSTRAP_HASKELL_INSTALL_STACK=0 \
+      sh
+fi
+{{- else }}
+echo ">>> Skipping ghcup (installGhcup=false in chezmoi.toml)"
+{{- end }}
+
+# ──────────────────────────────────────────────────────────
+# 5. Flutter SDK  [optional: chezmoi.toml の installFlutter]
+# ──────────────────────────────────────────────────────────
+{{ if .installFlutter -}}
+FLUTTER_DIR="$HOME/flutter"
+if [ ! -d "$FLUTTER_DIR" ]; then
+  echo ">>> Installing Flutter SDK..."
+  git clone https://github.com/flutter/flutter.git \
+    --branch stable \
+    --depth 1 \
+    "$FLUTTER_DIR"
+fi
+export PATH="$FLUTTER_DIR/bin:$PATH"
+flutter precache
+{{- else }}
+echo ">>> Skipping Flutter (installFlutter=false in chezmoi.toml)"
+{{- end }}
+
+# ──────────────────────────────────────────────────────────
+# 6. Python / uv
+# ──────────────────────────────────────────────────────────
+export PATH="$HOME/.local/bin:$PATH"
+
+if ! command -v uv &>/dev/null; then
+  echo ">>> Installing uv..."
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+fi
+
+# 追加ツールが必要な場合は以下に uv tool install <pkg> を追記
+# 例: uv tool install ruff
+
+echo ">>> Setup complete!"
